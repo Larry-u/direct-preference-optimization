@@ -67,13 +67,10 @@ def preference_loss(policy_chosen_logps: torch.FloatTensor,
         The losses tensor contains the DPO loss for each example in the batch.
         The chosen_rewards and rejected_rewards tensors contain the rewards for the chosen and rejected responses, respectively.
     """
-    pi_logratios = policy_chosen_logps - policy_rejected_logps
-    ref_logratios = reference_chosen_logps - reference_rejected_logps
+    chosen_logratios = policy_chosen_logps - (not reference_free) * reference_chosen_logps
+    rejected_logratios = policy_rejected_logps - (not reference_free) * reference_rejected_logps
 
-    if reference_free:
-        ref_logratios = 0
-
-    logits = pi_logratios - ref_logratios  # also known as h_{\pi_\theta}^{y_w,y_l}
+    logits = chosen_logratios - rejected_logratios  # also known as h_{\pi_\theta}^{y_w,y_l}
 
     if ipo:
         losses = (logits - 1/(2 * beta)) ** 2  # Eq. 17 of https://arxiv.org/pdf/2310.12036v2.pdf
